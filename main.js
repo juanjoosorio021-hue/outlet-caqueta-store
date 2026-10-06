@@ -9,12 +9,17 @@ const cats = {
   Hombres: ['Todos','Camisas','Camisetas','Jeans','Bermudas','Zapatos','Accesorios','Ropa interior']
 };
 let products = loadProducts();
+const num=v=>Number(String(v).replace(/[^\d]/g,''));
+// Cada foto de un lote es un modelo/producto independiente en la tienda
+const shop=()=>products.flatMap(l=>{const n=l.images?.length||0;if(n<2)return [{...l,lotId:l.id}];return l.images.map((im,i)=>({...l,id:`${l.id}#${i}`,lotId:l.id,images:[im],name:`${l.name} · Modelo ${i+1}`}));});
+function parseSizes(v){const sizes=[],stock={};String(v||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(t=>{const [n,q]=t.split(':').map(x=>x.trim());if(!n)return;sizes.push(n);stock[n]=(q===undefined||q==='')?null:Math.max(0,num(q));});return {sizes,stock};}
+function sizesHTML(p){if(!p.sizes?.length)return '';return `<div class="sizes">${p.sizes.map(z=>{const out=p.stock&&p.stock[z]===0;return `<button class="size ${state.sel[p.id]===z?'on':''}" data-a="size" data-id="${esc(p.id)}" data-s="${esc(z)}" ${out?'disabled':''}>${esc(z)}${out?'<i>Agotada</i>':''}</button>`;}).join('')}</div>${state.warn===p.id?'<p class="size-warn">Elige una talla</p>':''}`;}
 
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CART_KEY='outlet-caqueta-cart';
 function loadCart(){try{const c=JSON.parse(localStorage.getItem(CART_KEY)||'[]');return Array.isArray(c)?c.filter(p=>p&&p.name&&Number.isFinite(Number(p.price))):[];}catch{return [];}}
 function saveCart(){try{localStorage.setItem(CART_KEY,JSON.stringify(state.cart));}catch{}}
-const state = {page:'home',gender:null,category:'Todos',cart:loadCart(),query:''};
+const state = {page:'home',gender:null,category:'Todos',cart:loadCart(),query:'',sel:{},warn:null};
 const imgCache=new Map();
 async function imgSrc(id){if(!id)return null;if(/^(https?:|data:|\/)/.test(id))return id;if(!imgCache.has(id)){const b=await getImage(id).catch(()=>null);imgCache.set(id,b?URL.createObjectURL(b):null);}return imgCache.get(id);}
 function hydrateImages(){document.querySelectorAll('[data-img]').forEach(async el=>{const src=await imgSrc(el.dataset.img);if(src&&el.isConnected&&!el.querySelector('img')){const im=new Image();im.src=src;im.alt='';im.loading='lazy';el.prepend(im);el.classList.add('has-img');}});}
@@ -85,14 +90,15 @@ function home(){
 }
 
 function card(p){
-  return `<article class="card"><div class="photo" data-img="${esc(p.images?.[0]||'')}"><div class="photo-placeholder">${p.gender==='Damas'?'MODA':'ESTILO'}</div><small>${esc(p.category)}</small><button class="fav ${acc.favs.has(p.id)?'on':''}" data-a="fav" data-id="${esc(p.id)}" aria-label="Favorito">${acc.favs.has(p.id)?'♥':'♡'}</button></div><div class="info"><h3>${esc(p.name)}</h3><strong>${money(p.price)}</strong><button data-a="add" data-id="${p.id}">Agregar al carrito</button></div></article>`;
+  return `<article class="card"><div class="photo" data-img="${esc(p.images?.[0]||'')}"><div class="photo-placeholder">${p.gender==='Damas'?'MODA':'ESTILO'}</div><small>${esc(p.category)}</small><button class="fav ${acc.favs.has(p.id)?'on':''}" data-a="fav" data-id="${esc(p.id)}" aria-label="Favorito">${acc.favs.has(p.id)?'♥':'♡'}</button></div><div class="info"><h3>${esc(p.name)}</h3><strong>${money(p.price)}</strong>${sizesHTML(p)}<button data-a="add" data-id="${esc(p.id)}">Agregar al carrito</button></div></article>`;
 }
 
 function catalog(){
+  const all=shop();
   const q=state.query.trim().toLowerCase();
   const isSearch=!state.gender && !!q;
-  const availableCats=isSearch ? ['Todos', ...[...new Set(products.map(p=>p.category))]] : cats[state.gender];
-  const arr = products.filter(p=>{
+  const availableCats=isSearch ? ['Todos', ...[...new Set(all.map(p=>p.category))]] : cats[state.gender];
+  const arr = all.filter(p=>{
     const matchesGender = state.gender ? p.gender===state.gender : true;
     const matchesCategory = state.category==='Todos'||p.category===state.category;
     const haystack = `${p.name} ${p.category} ${p.gender}`.toLowerCase();
@@ -117,7 +123,7 @@ function adminLogin(){return `<main class="admin-page"><div class="admin-login">
 async function admin(){
   if(!isAdmin()) return adminLogin();
   const count=products.length;
-  return `<main class="admin-page"><div class="admin-shell"><header class="admin-head"><div><p class="eyebrow">OUTLET CAQUETÁ STORE</p><h1>Administrador</h1><p>Catálogos, lotes y mercancía.</p></div><div class="admin-actions"><button class="secondary" data-admin="home">Ver tienda</button><button class="secondary" data-admin="logout">Cerrar sesión</button></div></header><section class="admin-stats"><div><b>${count}</b><span>Lotes / productos</span></div><div><b>${products.reduce((a,p)=>a+(p.images?.length||0),0)}</b><span>Fotos registradas</span></div><div><b>${new Set(products.map(p=>p.gender)).size}</b><span>Secciones</span></div></section><section class="admin-grid"><div class="admin-card"><div class="admin-card-head"><div><p class="eyebrow">NUEVO LOTE</p><h2>Agregar mercancía</h2></div></div><form id="product-form" class="product-form"><div class="form-grid"><label>Sección<select name="gender" required>${Object.keys(ADMIN_CATS).map(g=>`<option>${g}</option>`).join('')}</select></label><label>Categoría<select name="category" required>${ADMIN_CATS.Damas.map(c=>`<option>${c}</option>`).join('')}</select></label><label class="full">Nombre del lote / producto<input name="name" required placeholder="Ej. Jean rígido clásico"></label><label>Precio COP<input name="price" type="number" min="0" step="100" required placeholder="55000"></label><label>Tallas<input name="sizes" placeholder="28, 30, 32, 34"></label><label class="full">Colores<input name="colors" placeholder="Azul, Negro, Blanco"></label><label class="full">Descripción<textarea name="description" rows="3" placeholder="Detalles del producto..."></textarea></label><label class="full upload-box">Fotos del lote<input id="product-images" name="images" type="file" accept="image/*" multiple required><span>Selecciona 1, 20 o 100 fotos a la vez.</span></label></div><button class="primary" type="submit">Guardar lote</button><div id="admin-message" class="admin-message"></div></form></div><div class="admin-card"><div class="admin-card-head"><div><p class="eyebrow">CATÁLOGO</p><h2>Mercancía cargada</h2></div></div><div id="admin-products">${products.map(p=>adminProduct(p)).join('')||'<div class="empty">Todavía no has cargado mercancía.</div>'}</div></div></section><section class="admin-card backup-card"><div><p class="eyebrow">RESPALDO</p><h2>Copias de seguridad</h2><p>Exporta los datos del catálogo antes de hacer cambios importantes. Las fotos siguen guardadas en este navegador.</p></div><div class="backup-actions"><button class="secondary" data-admin="export">Exportar catálogo</button><label class="secondary import-label">Importar catálogo<input id="import-json" type="file" accept="application/json"></label><button class="secondary" data-admin="password">Cambiar contraseña</button></div></section></div></main>`;
+  return `<main class="admin-page"><div class="admin-shell"><header class="admin-head"><div><p class="eyebrow">OUTLET CAQUETÁ STORE</p><h1>Administrador</h1><p>Catálogos, lotes y mercancía.</p></div><div class="admin-actions"><button class="secondary" data-admin="home">Ver tienda</button><button class="secondary" data-admin="logout">Cerrar sesión</button></div></header><section class="admin-stats"><div><b>${count}</b><span>Lotes / productos</span></div><div><b>${products.reduce((a,p)=>a+(p.images?.length||0),0)}</b><span>Fotos registradas</span></div><div><b>${new Set(products.map(p=>p.gender)).size}</b><span>Secciones</span></div></section><section class="admin-grid"><div class="admin-card"><div class="admin-card-head"><div><p class="eyebrow">NUEVO LOTE</p><h2>Agregar mercancía</h2></div></div><form id="product-form" class="product-form"><div class="form-grid"><label>Sección<select name="gender" required>${Object.keys(ADMIN_CATS).map(g=>`<option>${g}</option>`).join('')}</select></label><label>Categoría<select name="category" required>${ADMIN_CATS.Damas.map(c=>`<option>${c}</option>`).join('')}</select></label><label class="full">Nombre del lote / producto<input name="name" required placeholder="Ej. Jean rígido clásico"></label><label>Precio COP<input name="price" type="text" inputmode="numeric" autocomplete="off" required placeholder="55.000"></label><label class="full">Tallas e inventario (talla:cantidad)<input name="sizes" placeholder="S:5, M:3, L:0, XL:2 — 0 = agotada; sin número = disponible"></label><label class="full">Colores<input name="colors" placeholder="Azul, Negro, Blanco"></label><label class="full">Descripción<textarea name="description" rows="3" placeholder="Detalles del producto..."></textarea></label><label class="full upload-box">Fotos del lote<input id="product-images" name="images" type="file" accept="image/*" multiple required><span>Selecciona 1, 20 o 100 fotos a la vez.</span></label></div><button class="primary" type="submit">Guardar lote</button><div id="admin-message" class="admin-message"></div></form></div><div class="admin-card"><div class="admin-card-head"><div><p class="eyebrow">CATÁLOGO</p><h2>Mercancía cargada</h2></div></div><div id="admin-products">${products.map(p=>adminProduct(p)).join('')||'<div class="empty">Todavía no has cargado mercancía.</div>'}</div></div></section><section class="admin-card backup-card"><div><p class="eyebrow">RESPALDO</p><h2>Copias de seguridad</h2><p>Exporta los datos del catálogo antes de hacer cambios importantes. Las fotos siguen guardadas en este navegador.</p></div><div class="backup-actions"><button class="secondary" data-admin="export">Exportar catálogo</button><label class="secondary import-label">Importar catálogo<input id="import-json" type="file" accept="application/json"></label><button class="secondary" data-admin="password">Cambiar contraseña</button></div></section></div></main>`;
 }
 function adminProduct(p){return `<article class="admin-product" data-pid="${p.id}"><div class="admin-product-main"><div><span class="admin-chip">${esc(p.gender)} · ${esc(p.category)}</span><h3>${esc(p.name)}</h3><strong>${money(p.price)}</strong><p>${esc(p.sizes?.join(', ')||'Sin tallas')} · ${esc(p.colors?.join(', ')||'Sin colores')}</p></div><div class="admin-product-actions"><button class="secondary" data-admin="edit" data-id="${p.id}">Editar</button><button class="danger" data-admin="delete" data-id="${p.id}">Eliminar</button></div></div><small>${p.images?.length||0} fotos</small></article>`}
 
@@ -126,10 +132,11 @@ let adminMsg='';
 function renderAdminOnly(){const root=document.querySelector('#app'); if(root){admin().then(html=>{root.innerHTML=html;document.body.dataset.page='admin';bindAdmin();const m=document.querySelector('#admin-message');if(m&&adminMsg){m.textContent=adminMsg;adminMsg='';}});}}
 function bindAdmin(){
  const form=document.querySelector('#product-form');
+ const pr=form?.querySelector('[name=price]');pr?.addEventListener('input',()=>{const d=pr.value.replace(/\D/g,'');pr.value=d?Number(d).toLocaleString('es-CO'):'';});
  if(form){const g=form.querySelector('[name=gender]'),c=form.querySelector('[name=category]');g.addEventListener('change',()=>{c.innerHTML=ADMIN_CATS[g.value].map(x=>`<option>${x}</option>`).join('');});}
- if(form) form.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(form);const files=[...document.querySelector('#product-images').files];const p={id:`p-${Date.now()}`,name:f.get('name').trim(),category:f.get('category'),gender:f.get('gender'),price:Number(f.get('price')),sizes:String(f.get('sizes')||'').split(',').map(x=>x.trim()).filter(Boolean),colors:String(f.get('colors')||'').split(',').map(x=>x.trim()).filter(Boolean),description:String(f.get('description')||'').trim(),images:[]};for(const file of files){const id=`img-${Date.now()}-${crypto.randomUUID()}`;await saveImage(id,await compressImage(file));p.images.push(id);}products.push(p);saveProducts(products);form.reset();adminMsg=`Lote guardado correctamente: ${p.name}`;renderAdminOnly();});
+ if(form) form.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(form);const files=[...document.querySelector('#product-images').files];const p={id:`p-${Date.now()}`,name:f.get('name').trim(),category:f.get('category'),gender:f.get('gender'),price:num(f.get('price')),...parseSizes(f.get('sizes')),colors:String(f.get('colors')||'').split(',').map(x=>x.trim()).filter(Boolean),description:String(f.get('description')||'').trim(),images:[]};for(const file of files){const id=`img-${Date.now()}-${crypto.randomUUID()}`;await saveImage(id,await compressImage(file));p.images.push(id);}products.push(p);saveProducts(products);form.reset();adminMsg=`Lote guardado correctamente: ${p.name}`;renderAdminOnly();});
  document.querySelectorAll('[data-admin="delete"]').forEach(b=>b.addEventListener('click',async()=>{const p=products.find(x=>x.id===b.dataset.id);if(!p||!confirm(`¿Eliminar ${p.name}?`))return;for(const id of p.images||[])await deleteImage(id);products=products.filter(x=>x.id!==p.id);saveProducts(products);renderAdminOnly();}));
- document.querySelectorAll('[data-admin="edit"]').forEach(b=>b.addEventListener('click',()=>{const p=products.find(x=>x.id===b.dataset.id);if(!p)return;const newPrice=prompt(`Nuevo precio para ${p.name}:`,p.price);if(newPrice!==null&&!Number.isNaN(Number(newPrice))){p.price=Number(newPrice);saveProducts(products);renderAdminOnly();}}));
+ document.querySelectorAll('[data-admin="edit"]').forEach(b=>b.addEventListener('click',()=>{const p=products.find(x=>x.id===b.dataset.id);if(!p)return;const newPrice=prompt(`Nuevo precio para ${p.name}:`,p.price);if(newPrice!==null&&!Number.isNaN(num(newPrice))){p.price=num(newPrice);const cur=(p.sizes||[]).map(z=>p.stock?.[z]==null?z:`${z}:${p.stock[z]}`).join(', ');const ns=prompt('Tallas e inventario (ej. S:5, M:0, L:3):',cur);if(ns!==null)Object.assign(p,parseSizes(ns));saveProducts(products);renderAdminOnly();}}));
  document.querySelectorAll('[data-admin="home"]').forEach(b=>b.addEventListener('click',()=>{location.assign('/');}));
  document.querySelectorAll('[data-admin="logout"]').forEach(b=>b.addEventListener('click',()=>{logout();renderAdminOnly();}));
  document.querySelectorAll('[data-admin="export"]').forEach(b=>b.addEventListener('click',()=>{const blob=new Blob([JSON.stringify(products,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='outlet-caqueta-catalogo-backup.json';a.click();URL.revokeObjectURL(a.href);}));
@@ -166,7 +173,7 @@ async function render({scroll=true}={}){
   products=loadProducts();
   document.querySelector('#app').innerHTML=header()+(state.page==='catalog'?catalog():state.page==='cart'?cart():state.page==='account'?accountPage():home());
   document.body.dataset.page=state.page;
-  if(state.page==='account'){document.querySelector('#account-root').innerHTML=accountHTML({money,products,cart:state.cart});}
+  if(state.page==='account'){document.querySelector('#account-root').innerHTML=accountHTML({money,products:shop(),cart:state.cart});}
   hydrateImages();
   if(scroll) window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -201,11 +208,12 @@ document.addEventListener('click',e=>{
   if(a==='cart'){state.page='cart';}
   if(a==='account'){state.page='account';}
   if(a==='fav'){if(!acc.user){state.page='account';acc.notice='Inicia sesión o crea tu cuenta para guardar favoritos.';}else toggleFav(x.dataset.id);}
-  if(a==='add'){const p=products.find(q=>q.id===x.dataset.id);if(p)state.cart.push(p);}
+  if(a==='size'){state.sel[x.dataset.id]=x.dataset.s;state.warn=null;}
+  if(a==='add'){const p=shop().find(q=>q.id===x.dataset.id);if(p){if(p.sizes?.length&&!state.sel[p.id]){state.warn=p.id;}else{const z=state.sel[p.id];state.cart.push({...p,name:p.name+(z?` · Talla ${z}`:''),size:z||null});state.warn=null;}}}
   if(a==='remove'){const index=Number(x.dataset.index);if(Number.isInteger(index) && index>=0 && index<state.cart.length)state.cart.splice(index,1);state.page='cart';}
   if(a==='wa'){if(!state.cart.length)return;createOrder(state.cart,state.cart.reduce((t,p)=>t+p.price,0));const items=state.cart.map(p=>`• ${p.name} — ${money(p.price)}`).join('\n');const total=state.cart.reduce((t,p)=>t+p.price,0);const msg=`Hola 👋 Soy cliente de OUTLET CAQUETÁ STORE.\n\nQuiero realizar este pedido:\n${items}\n\nTotal: ${money(total)}\n\n¿Me confirmas disponibilidad para continuar?`;window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`,'_blank','noopener');}
   saveCart();syncCart();
-  const quiet=a==='add'||a==='wa'||a==='fav'&&state.page!=='account';
+  const quiet=a==='add'||a==='size'||a==='wa'||a==='fav'&&state.page!=='account';
   render({scroll:!quiet});
   if(!quiet) syncHistory(false);
 });

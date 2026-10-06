@@ -170,3 +170,17 @@ footer .footer-contact a,footer .social a{color:#fff}
 .acc-order .st-Cancelado{background:#fff0f0;color:#a83232}
 @media(max-width:850px){.account-page .acc-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.acc-label{display:none}.acc-form.acc-2{grid-template-columns:1fr}.acc-card{padding:18px}nav button{padding:8px 6px}}
+
+/* V10 — tallas y colores del Home */
+.sizes{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.size{min-width:36px;padding:6px 9px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;line-height:1.15;cursor:pointer}
+.size.on{background:var(--green);color:#fff;border-color:var(--green)}
+.size:disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+.size i{font-style:normal;font-size:8px;text-decoration:none}
+.size-warn{color:#a83232;font-size:12px;font-weight:700;margin:0 0 6px}
+.explore-grid .explore-card.women{background:linear-gradient(135deg,#f5eefc,#e2d3f5)!important;border:2px solid #cdb6ea!important;position:relative}
+.explore-grid .explore-card.men{background:linear-gradient(135deg,#eaf3fc,#d0e4f7)!important;border:2px solid #aecbea!important;position:relative}
+.explore-card.women strong,.explore-card.women small{color:#5a3d86!important}
+.explore-card.men strong,.explore-card.men small{color:#2c5a86!important}
+.explore-card.women::before,.explore-card.men::before{position:absolute;top:18px;right:20px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:22px;font-weight:800;background:rgba(255,255,255,.75)}
+.explore-card.women::before{content:"♀";color:#7a56ad}.explore-card.men::before{content:"♂";color:#3f78b0}

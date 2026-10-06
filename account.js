@@ -2,7 +2,7 @@ import { supabase, configured } from './supabase.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const T = t => supabase.from(t);
-export const acc = { user: null, favs: new Set(), profile: {}, addr: {}, orders: [], mode: 'login', forgot: false, recovery: false, notice: '', err: '' };
+export const acc = { user: null, favs: new Set(), profile: {}, addr: {}, orders: [], mode: 'login', edit: false, forgot: false, recovery: false, notice: '', err: '' };
 let C = { money: n => n, products: [], cart: [] };
 let hooks = null;
 
@@ -16,7 +16,7 @@ async function loadAll() {
     T('orders').select('*,order_items(*)').eq('user_id', u).order('created_at', { ascending: false })
   ]);
   acc.profile = p.data || {}; acc.addr = a.data || {};
-  acc.favs = new Set((f.data || []).map(r => r.product_id)); acc.orders = o.data || [];
+  acc.favs = new Set((f.data || []).map(r => r.product_id)); acc.orders = (o.data || []).filter(x => !x.hidden_by_user);
 }
 
 export async function initAccount(onChange) {
@@ -43,7 +43,7 @@ export function toggleFav(id) {
   return q.then(r => { if (r.error) { on ? acc.favs.delete(id) : acc.favs.add(id); hooks?.rerender(); } });
 }
 
-const group = cart => { const g = new Map(); cart.forEach(p => { let r = g.get(p.id); if (!r) { r = { product_id: p.id, name: p.name, price: p.price, qty: 0 }; g.set(p.id, r); } r.qty++; }); return [...g.values()]; };
+const group = cart => { const g = new Map(); cart.forEach(p => { let r = g.get(p.name); if (!r) { r = { product_id: p.id, name: p.name, price: p.price, qty: 0 }; g.set(p.name, r); } r.qty++; }); return [...g.values()]; };
 export async function saveRemoteCart(cart) {
   if (!acc.user) return; const u = acc.user.id;
   await T('carts').upsert({ user_id: u, updated_at: new Date().toISOString() });
@@ -79,12 +79,14 @@ function outHTML() {
 
 function inHTML() {
   const p = acc.profile, a = acc.addr, name = [p.first_name, p.last_name].filter(Boolean).join(' ') || acc.user.email;
+  const showForms = !isComplete() || acc.edit;
   const favs = C.products.filter(x => acc.favs.has(x.id));
-  const orders = acc.orders.map(o => `<article class="acc-order"><div><b>Pedido #${o.number ?? ''}</b><span>${new Date(o.created_at).toLocaleDateString('es-CO')}</span><em class="st st-${esc(o.status).replace(/\s/g, '')}">${esc(o.status)}</em></div><ul>${(o.order_items || []).map(i => `<li>${i.qty} × ${esc(i.name)} — ${C.money(i.price)}</li>`).join('')}</ul><strong>Total ${C.money(o.total)}</strong></article>`).join('');
-  return `<div class="head"><div><p class="eyebrow">MI CUENTA 👤</p><h2>Hola, ${esc(name)}</h2><p>${esc(acc.user.email)}</p></div><div class="acc-head-actions"><button class="back" data-a="home">← Inicio</button><button class="back" data-acc="signout">Cerrar sesión</button></div></div>${msg()}
+  const act = o => { const b = []; if (['Pendiente', 'Confirmado'].includes(o.status)) b.push(['cancel', 'Cancelar pedido']); if (['Confirmado', 'En preparación', 'Enviado'].includes(o.status)) b.push(['recv', 'Ya lo recibí']); if (['Entregado', 'Cancelado'].includes(o.status)) b.push(['hide', 'Quitar de mi lista']); return `<div class="acc-actions">${b.map(([k, t]) => `<button class="secondary" data-acc="ord" data-do="${k}" data-id="${esc(o.id)}">${t}</button>`).join('')}</div>`; };
+  const orders = acc.orders.map(o => `<article class="acc-order"><div><b>Pedido #${o.number ?? ''}</b><span>${new Date(o.created_at).toLocaleDateString('es-CO')}</span><em class="st st-${esc(o.status).replace(/\s/g, '')}">${esc(o.status)}</em></div><ul>${(o.order_items || []).map(i => `<li>${i.qty} × ${esc(i.name)} — ${C.money(i.price)}</li>`).join('')}</ul><strong>Total ${C.money(o.total)}</strong>${act(o)}</article>`).join('');
+  return `<div class="head"><div><p class="eyebrow">MI CUENTA 👤</p><h2>Hola, ${esc(name)}</h2><p>¡Qué alegría tenerte aquí! Descubre moda bonita, nueva y a tu medida 💚🛍️</p></div><div class="acc-head-actions"><button class="back" data-a="home">← Inicio</button>${isComplete() ? (acc.edit ? '<button class="back" data-acc="canceledit">Cancelar edición</button>' : '<button class="back" data-acc="edit">✏️ Editar mis datos</button>') : ''}<button class="back" data-acc="signout">Cerrar sesión</button></div></div>${msg()}
   ${acc.recovery ? `<section class="acc-card"><h3>Nueva contraseña</h3><form id="acc-newpass" class="acc-form">${field('password', 'Nueva contraseña', '', 'password', true)}<button class="primary" type="submit">Guardar contraseña</button></form></section>` : ''}
-  <div class="acc-grid"><section class="acc-card"><h3>👤 Mis datos</h3><form id="acc-profile" class="acc-form acc-2">${field('first_name', 'Nombre', p.first_name)}${field('last_name', 'Apellido', p.last_name)}${field('phone', 'Teléfono', p.phone, 'tel')}<label>Correo electrónico<input value="${esc(acc.user.email)}" readonly></label><button class="primary full" type="submit">Guardar mis datos</button></form></section>
-  <section class="acc-card"><h3>📍 Datos de envío</h3><form id="acc-addr" class="acc-form acc-2">${field('recipient', 'Nombre del destinatario', a.recipient)}${field('phone', 'Teléfono', a.phone, 'tel')}${field('department', 'Departamento', a.department)}${field('city', 'Ciudad', a.city)}<div class="full">${field('address', 'Dirección', a.address)}</div>${field('neighborhood', 'Barrio', a.neighborhood)}${field('postal_code', 'Código postal (opcional)', a.postal_code)}<div class="full">${field('reference', 'Referencia', a.reference)}</div><label class="full">Transportadora preferida<select name="carrier">${['', 'Inter Rapidísimo', 'Servientrega', 'Líneas Verdes'].map(c => `<option ${a.carrier === c ? 'selected' : ''} value="${c}">${c || 'Sin preferencia'}</option>`).join('')}</select></label><button class="primary full" type="submit">Guardar datos de envío</button></form></section>
+  <div class="acc-grid">${showForms ? `<section class="acc-card"><h3>👤 Mis datos</h3><form id="acc-profile" class="acc-form acc-2">${field('first_name', 'Nombre', p.first_name)}${field('last_name', 'Apellido', p.last_name)}${field('phone', 'Teléfono', p.phone, 'tel')}<label>Correo electrónico<input value="${esc(acc.user.email)}" readonly></label><button class="primary full" type="submit">Guardar mis datos</button></form></section>
+  <section class="acc-card"><h3>📍 Datos de envío</h3><form id="acc-addr" class="acc-form acc-2">${field('recipient', 'Nombre del destinatario', a.recipient)}${field('phone', 'Teléfono', a.phone, 'tel')}${field('department', 'Departamento', a.department)}${field('city', 'Ciudad', a.city)}<div class="full">${field('address', 'Dirección', a.address)}</div>${field('neighborhood', 'Barrio', a.neighborhood)}${field('postal_code', 'Código postal (opcional)', a.postal_code)}<div class="full">${field('reference', 'Referencia', a.reference)}</div><label class="full">Transportadora preferida<select name="carrier">${['', 'Inter Rapidísimo', 'Servientrega', 'Líneas Verdes'].map(c => `<option ${a.carrier === c ? 'selected' : ''} value="${c}">${c || 'Sin preferencia'}</option>`).join('')}</select></label><button class="primary full" type="submit">Guardar datos de envío</button></form></section>` : ''}
   <section class="acc-card"><h3>❤️ Mis favoritos</h3>${favs.length ? favs.map(f => `<div class="acc-row"><span>${esc(f.name)} · ${C.money(f.price)}</span><button class="remove-item" data-acc="unfav" data-id="${esc(f.id)}">Quitar</button></div>`).join('') : '<p class="acc-empty">Aún no tienes favoritos. Toca ♡ en un producto.</p>'}</section>
   <section class="acc-card"><h3>🛒 Carrito guardado</h3><p class="acc-empty">Tu carrito se guarda en tu cuenta automáticamente. Ahora tienes ${C.cart.length} producto(s).</p><div class="acc-actions"><button class="secondary" data-acc="cartsave">Guardar carrito ahora</button><button class="secondary" data-acc="cartload">Recuperar carrito guardado</button></div></section>
   <section class="acc-card acc-wide"><h3>📦 Mis pedidos</h3>${orders || '<p class="acc-empty">Todavía no tienes pedidos. Los que envíes por WhatsApp con tu cuenta iniciada aparecerán aquí.</p>'}</section></div>`;
@@ -92,6 +94,7 @@ function inHTML() {
 
 export function accountHTML(ctx) { C = ctx; return acc.user ? inHTML() : outHTML(); }
 
+const isComplete = () => !!(acc.profile.first_name && acc.addr.address && acc.addr.city);
 const done = (n = '', e = '') => { acc.notice = n; acc.err = e; hooks.rerender(); };
 const fd = f => Object.fromEntries(new FormData(f));
 export function bindAccount(h) {
@@ -102,6 +105,17 @@ export function bindAccount(h) {
     if (k === 'mode') { acc.mode = b.dataset.m; acc.forgot = false; return done(); }
     if (k === 'forgot') { acc.forgot = true; return done(); }
     if (!configured) return done('', 'Supabase no está conectado todavía.');
+    if (k === 'edit') { acc.edit = true; acc.notice = ''; return hooks.rerender(); }
+    if (k === 'canceledit') { acc.edit = false; return hooks.rerender(); }
+    if (k === 'ord') {
+      const o = acc.orders.find(x => x.id === b.dataset.id); if (!o) return; const d = b.dataset.do;
+      if (d === 'cancel' && !confirm('¿Cancelar este pedido?')) return;
+      const patch = d === 'cancel' ? { status: 'Cancelado' } : d === 'recv' ? { status: 'Entregado' } : { hidden_by_user: true };
+      const r = await T('orders').update(patch).eq('id', o.id);
+      if (r.error) return done('', 'No se pudo actualizar el pedido. Intenta de nuevo.');
+      Object.assign(o, patch); if (patch.hidden_by_user) acc.orders = acc.orders.filter(x => x !== o);
+      return done(d === 'cancel' ? 'Pedido cancelado.' : d === 'recv' ? '¡Qué bueno que ya lo tienes! Pedido marcado como entregado.' : 'Pedido quitado de tu lista.');
+    }
     if (k === 'signout') { await supabase.auth.signOut(); return done('Sesión cerrada.'); }
     if (k === 'unfav') { await toggleFav(b.dataset.id); return hooks.rerender(); }
     if (k === 'cartsave') { await saveRemoteCart(C.cart); return done('Carrito guardado en tu cuenta.'); }
@@ -120,7 +134,7 @@ export function bindAccount(h) {
     }
     if (id === 'acc-forgot') { r = await supabase.auth.resetPasswordForEmail(v.email, { redirectTo: location.origin + '/?page=account' }); return done(r.error ? '' : 'Te enviamos un enlace de recuperación a tu correo.', r.error?.message || ''); }
     if (id === 'acc-newpass') { r = await supabase.auth.updateUser({ password: v.password }); if (!r.error) acc.recovery = false; return done(r.error ? '' : 'Contraseña actualizada.', r.error?.message || ''); }
-    if (id === 'acc-profile') { r = await T('profiles').upsert({ id: u, email: acc.user.email, ...v, updated_at: new Date().toISOString() }); if (!r.error) acc.profile = { ...acc.profile, ...v }; return done(r.error ? '' : 'Datos guardados.', r.error?.message || ''); }
-    if (id === 'acc-addr') { r = await T('addresses').upsert({ user_id: u, ...v, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (!r.error) acc.addr = { ...acc.addr, ...v }; return done(r.error ? '' : 'Datos de envío guardados.', r.error?.message || ''); }
+    if (id === 'acc-profile') { r = await T('profiles').upsert({ id: u, email: acc.user.email, ...v, updated_at: new Date().toISOString() }); if (!r.error) acc.profile = { ...acc.profile, ...v }; if (!r.error && isComplete()) acc.edit = false; return done(r.error ? '' : 'Datos guardados.', r.error?.message || ''); }
+    if (id === 'acc-addr') { r = await T('addresses').upsert({ user_id: u, ...v, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (!r.error) acc.addr = { ...acc.addr, ...v }; if (!r.error && isComplete()) acc.edit = false; return done(r.error ? '' : 'Datos de envío guardados.', r.error?.message || ''); }
   });
 }
