@@ -61,7 +61,6 @@ function promo(){
   return `<section class="promo section-shell">
     <div class="promo-badge"><small>CAMPAÑA ESPECIAL</small><strong>DÍAS DE<br>GRAN APERTURA</strong></div>
     <div class="promo-copy"><p class="eyebrow">PRIMER MES DE APERTURA</p><h2>Hasta <strong>30% DE DESCUENTO</strong></h2><p>En toda la tienda por nuestro primer mes de apertura.</p><button class="primary" data-a="gender" data-g="Damas">¡Comprar ahora!</button></div>
-    <div class="promo-products"><span class="promo-shirt">✦</span><span class="promo-jean">✦</span><span class="promo-tag">30%</span></div>
   </section>`;
 }
 

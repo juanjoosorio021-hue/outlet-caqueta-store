@@ -12,7 +12,7 @@ export default ({ mode }) => {
     plugins: [{
       name: 'version-file',
       generateBundle() {
-        this.emitFile({ type: 'asset', fileName: 'version.txt', source: 'OUTLET CAQUETA STORE - V9 Mi cuenta (archivos en raiz)\n' });
+        this.emitFile({ type: 'asset', fileName: 'version.txt', source: 'OUTLET CAQUETA STORE - V10.1 tallas, modelos y pedidos\n' });
       }
     }]
   };

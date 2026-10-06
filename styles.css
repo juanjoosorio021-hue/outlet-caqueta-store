@@ -184,3 +184,7 @@ footer .footer-contact a,footer .social a{color:#fff}
 .explore-card.men strong,.explore-card.men small{color:#2c5a86!important}
 .explore-card.women::before,.explore-card.men::before{position:absolute;top:18px;right:20px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:22px;font-weight:800;background:rgba(255,255,255,.75)}
 .explore-card.women::before{content:"♀";color:#7a56ad}.explore-card.men::before{content:"♂";color:#3f78b0}
+
+.acc-order{position:relative;padding-right:34px}
+.order-x{position:absolute;top:12px;right:0;width:26px;height:26px;border-radius:50%;background:#f1f4f2;color:#69746e;font-size:13px;font-weight:800;display:grid;place-items:center}
+.order-x:hover{background:#fff0f0;color:#a83232}
