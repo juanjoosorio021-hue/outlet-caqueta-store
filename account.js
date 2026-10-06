@@ -1,4 +1,4 @@
-import { supabase, configured } from './lib/supabase.js';
+import { supabase, configured } from './supabase.js';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const T = t => supabase.from(t);

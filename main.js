@@ -1,3 +1,4 @@
+import logoUrl from './logo.png';
 import './styles.css';
 import {ADMIN_CATS, loadProducts, saveProducts, saveImage, getImage, deleteImage, isAdmin, login, logout, changePassword, compressImage} from './admin.js';
 import {acc, initAccount, bindAccount, accountHTML, toggleFav, saveRemoteCart, loadRemoteCart, createOrder} from './account.js';
@@ -21,7 +22,7 @@ let restoringHistory = false;
 const money = n => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n);
 
 function logo(){
-  return `<span class="logo-mark"><img src="/images/logo.png" alt="OUTLET CAQUETÁ STORE"></span><span class="logo-wordmark"><b>OUTLET CAQUETÁ</b><small>STORE</small></span>`;
+  return `<span class="logo-mark"><img src="${logoUrl}" alt="OUTLET CAQUETÁ STORE"></span><span class="logo-wordmark"><b>OUTLET CAQUETÁ</b><small>STORE</small></span>`;
 }
 
 

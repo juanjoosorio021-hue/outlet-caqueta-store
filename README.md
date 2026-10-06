@@ -3,12 +3,7 @@
 Tienda web (Vite + JavaScript) con panel privado `/admin`.
 
 ## Estructura
-```
-index.html
-src/        main.js (tienda) · admin.js (datos y acceso) · styles.css
-public/     images/ (logo y fondos) · icons/ (favicon)
-vercel.json package.json
-```
+Todos los archivos están en la raíz (sin carpetas): index.html, main.js, account.js, admin.js, supabase.js, styles.css, imágenes, schema.sql, vercel.json, package.json, vite.config.js.
 
 ## Uso
 ```
@@ -35,7 +30,7 @@ Siguiente paso para producción: Supabase (base de datos + Storage) y autenticac
 - Imágenes optimizadas, favicon con el logo, cabeceras de seguridad en Vercel.
 
 ## V9 — Mi cuenta (Supabase)
-1. Crea un proyecto en supabase.com y ejecuta `supabase/schema.sql` en **SQL Editor**.
+1. Crea un proyecto en supabase.com y ejecuta `schema.sql` en **SQL Editor**.
 2. En Vercel → Settings → Environment Variables agrega **`VITE_SUPABASE_URL`** y **`VITE_SUPABASE_ANON_KEY`** (Supabase → Project Settings → API). Vuelve a desplegar.
 3. En Supabase → Authentication → URL Configuration, pon la URL de tu tienda en *Site URL* y `https://TU-DOMINIO/?page=account` en *Redirect URLs* (necesario para recuperar contraseña).
 Sin esas variables la pantalla Mi cuenta se ve igual y muestra un aviso. La cuenta de cliente es independiente de `/admin`.

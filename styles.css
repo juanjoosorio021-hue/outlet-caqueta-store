@@ -3,7 +3,7 @@
 @media(max-width:720px){.topbar{grid-template-columns:1fr auto;height:66px;padding:0 14px}.logo-wordmark b{font-size:10px}.logo-wordmark small{font-size:7px}.logo-mark{width:34px;height:34px}nav{gap:0}nav button{font-size:12px;padding:8px 7px}nav button:nth-child(1),nav button:nth-child(2){display:none}.hero{min-height:570px}.hero-in{padding:70px 18px}.hero h1{font-size:52px}.lead{font-size:15px}.hero-floating{display:none}.hero-actions{flex-direction:column}.hero-actions button{width:100%}.section-shell{width:min(var(--max),calc(100% - 28px))}.offer-strip{grid-template-columns:1fr;gap:20px;padding:38px 0}.offer-pills{justify-content:flex-start}.ticker-track span{font-size:12px}.promo{grid-template-columns:1fr;border-radius:18px;padding:25px 20px}.promo-badge{border:0;border-bottom:1px solid rgba(120,60,80,.14);padding:0 0 18px;margin-bottom:18px}.promo-copy{text-align:left}.promo-copy h2{font-size:31px}.intro{grid-template-columns:1fr;gap:20px;padding:65px 0 45px}.intro h2,.explore h2{font-size:34px}.intro>p{font-size:15px}.explore-grid{grid-template-columns:1fr}.explore-card{min-height:210px}.catalog{padding:35px 14px 70px}.head{align-items:start}.head h2{font-size:42px}.head p:not(.eyebrow){font-size:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.photo{height:155px}.info{padding:10px}.info h3{font-size:13px}.info strong{font-size:14px}.meta span{display:none}footer{grid-template-columns:1fr;gap:12px;padding:25px 20px}.copyright{font-size:10px}}
 
 /* V5 visual layer */
-.home{background-image:linear-gradient(rgba(248,250,247,.90),rgba(248,250,247,.96)),url('/images/fondo-home.jpg');background-size:cover;background-position:center;background-attachment:fixed}
+.home{background-image:linear-gradient(rgba(248,250,247,.90),rgba(248,250,247,.96)),url('./fondo-home.jpg');background-size:cover;background-position:center;background-attachment:fixed}
 .ticker{background:var(--green);color:#fff;border-color:rgba(255,255,255,.12)}
 .ticker-track span{font-weight:800;letter-spacing:.01em}
 .ticker-track b{color:#dcefe4}
@@ -20,9 +20,9 @@
 .photo{background:rgba(255,255,255,.52)}
 .photo svg{display:none}
 .photo-placeholder{height:100%;display:grid;place-items:center;font-size:22px;font-weight:850;letter-spacing:.12em;color:rgba(16,63,42,.24);background:linear-gradient(135deg,rgba(255,255,255,.3),rgba(31,128,80,.07))}
-.catalog{isolation:isolate}.catalog-bg{background-color:#f8faf7;background-image:linear-gradient(rgba(255,255,255,.76),rgba(255,255,255,.82)),url('/images/fondo-hombres.jpg');background-size:cover;background-position:center;background-attachment:fixed;filter:saturate(.98)}
-.catalog-damas .catalog-bg{background-image:linear-gradient(rgba(255,247,250,.74),rgba(255,250,252,.80)),url('/images/fondo-damas.jpg')}
-.catalog-hombres .catalog-bg{background-image:linear-gradient(rgba(248,252,249,.74),rgba(248,252,249,.82)),url('/images/fondo-hombres.jpg')}
+.catalog{isolation:isolate}.catalog-bg{background-color:#f8faf7;background-image:linear-gradient(rgba(255,255,255,.76),rgba(255,255,255,.82)),url('./fondo-hombres.jpg');background-size:cover;background-position:center;background-attachment:fixed;filter:saturate(.98)}
+.catalog-damas .catalog-bg{background-image:linear-gradient(rgba(255,247,250,.74),rgba(255,250,252,.80)),url('./fondo-damas.jpg')}
+.catalog-hombres .catalog-bg{background-image:linear-gradient(rgba(248,252,249,.74),rgba(248,252,249,.82)),url('./fondo-hombres.jpg')}
 .catalog-content{animation:contentIn .6s ease both}
 footer{position:relative;z-index:2;grid-template-columns:1.3fr 1fr 1fr 1.2fr auto}
 .footer-location,.footer-contact{display:flex;flex-direction:column;gap:4px;font-size:12px}.footer-location strong,.footer-contact strong{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.footer-contact a{text-decoration:none;font-weight:750}.social{flex-wrap:wrap}.social a{transition:transform .2s ease;color:var(--deep)}.social a:hover{transform:translateY(-2px)}
@@ -44,17 +44,17 @@ footer{position:relative;z-index:2;grid-template-columns:1.3fr 1fr 1fr 1.2fr aut
 .logo-mark img{width:44px;height:44px;object-fit:contain;display:block}
 
 /* El fondo oficial de Caquetá acompaña todo el Home, no las tarjetas de productos. */
-.home{position:relative;isolation:isolate;background-color:#214f3d;background-image:linear-gradient(rgba(239,247,241,.36),rgba(239,247,241,.58)),url('/images/fondo-home.jpg');background-size:cover;background-position:center;background-attachment:fixed}
+.home{position:relative;isolation:isolate;background-color:#214f3d;background-image:linear-gradient(rgba(239,247,241,.36),rgba(239,247,241,.58)),url('./fondo-home.jpg');background-size:cover;background-position:center;background-attachment:fixed}
 .hero{background:transparent}
 .hero-bg{opacity:0}
 .offer-strip,.intro,.explore{position:relative}
 .offer-strip:before,.intro:before,.explore:before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(248,250,247,.18);pointer-events:none}
 
 /* Catálogo Damas = morado, Hombres = azul. */
-.catalog-bg{background-color:#315d76;background-image:linear-gradient(rgba(226,239,246,.38),rgba(235,244,249,.52)),url('/images/fondo-hombres.jpg');background-size:cover;background-position:center;background-attachment:fixed;filter:none}
-.catalog-damas .catalog-bg{background-image:linear-gradient(rgba(56,35,66,.32),rgba(70,45,82,.46)),url('/images/fondo-damas.jpg')}
-.catalog-hombres .catalog-bg{background-image:linear-gradient(rgba(35,83,112,.28),rgba(47,101,130,.42)),url('/images/fondo-hombres.jpg')}
-.catalog-search .catalog-bg{background-image:linear-gradient(rgba(236,246,240,.52),rgba(239,247,242,.66)),url('/images/fondo-home.jpg')}
+.catalog-bg{background-color:#315d76;background-image:linear-gradient(rgba(226,239,246,.38),rgba(235,244,249,.52)),url('./fondo-hombres.jpg');background-size:cover;background-position:center;background-attachment:fixed;filter:none}
+.catalog-damas .catalog-bg{background-image:linear-gradient(rgba(56,35,66,.32),rgba(70,45,82,.46)),url('./fondo-damas.jpg')}
+.catalog-hombres .catalog-bg{background-image:linear-gradient(rgba(35,83,112,.28),rgba(47,101,130,.42)),url('./fondo-hombres.jpg')}
+.catalog-search .catalog-bg{background-image:linear-gradient(rgba(236,246,240,.52),rgba(239,247,242,.66)),url('./fondo-home.jpg')}
 .catalog-content{background:rgba(255,255,255,.10);border-radius:24px;padding:4px 0 20px}
 
 /* El buscador conserva resultados mixtos y deja visible que la búsqueda abarca ambos géneros. */
