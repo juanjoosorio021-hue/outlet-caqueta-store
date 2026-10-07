@@ -147,7 +147,7 @@ export async function payOnline(cart) {
   if (!configured || !acc.user) return { login: true };
   const { data } = await supabase.auth.getSession();
   try {
-    const r = await fetch('/api/crear-pago', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + data.session.access_token }, body: JSON.stringify({ items: group(cart).map(i => ({ id: i.product_id, lot: i.lot, size: i.size, qty: i.qty })) }) });
+    const r = await fetch('/api/wompi/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + data.session.access_token }, body: JSON.stringify({ items: group(cart).map(i => ({ id: i.product_id, lot: i.lot, size: i.size, qty: i.qty })) }) });
     const j = await r.json().catch(() => ({}));
     return r.ok ? j : { error: j.error || `No se pudo iniciar el pago (código ${r.status}). Revisa que exista /api/wompi/checkout en el proyecto.` };
   } catch { return { error: 'No se pudo conectar. Intenta de nuevo.' }; }
