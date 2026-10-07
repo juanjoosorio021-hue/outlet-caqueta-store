@@ -188,3 +188,8 @@ footer .footer-contact a,footer .social a{color:#fff}
 .acc-order{position:relative;padding-right:34px}
 .order-x{position:absolute;top:12px;right:0;width:26px;height:26px;border-radius:50%;background:#f1f4f2;color:#69746e;font-size:13px;font-weight:800;display:grid;place-items:center}
 .order-x:hover{background:#fff0f0;color:#a83232}
+
+.cart-page .pay{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;background:var(--deep);color:#fff;font-weight:800;font-size:15px}
+.cart-page .pay:disabled{opacity:.6}.cart-page .pay+.wa{margin-top:10px}
+
+.acc-order .pay-Aprobado{background:#e3f6ea;color:#16703f}.acc-order .pay-Rechazado{background:#fff0f0;color:#a83232}.acc-order .pay-Pendiente{background:#fff6dd;color:#6b5210}

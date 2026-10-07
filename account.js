@@ -45,23 +45,23 @@ export function toggleFav(id) {
   return q.then(r => { if (r.error) { on ? acc.favs.delete(id) : acc.favs.add(id); hooks?.rerender(); } });
 }
 
-const group = cart => { const g = new Map(); cart.forEach(p => { let r = g.get(p.name); if (!r) { r = { product_id: p.id, name: p.name, price: p.price, qty: 0 }; g.set(p.name, r); } r.qty++; }); return [...g.values()]; };
+const group = cart => { const g = new Map(); cart.forEach(p => { let r = g.get(p.name); if (!r) { r = { product_id: p.id, name: p.name, price: p.price, qty: 0, lot: p.lotId || String(p.id).split('#')[0], size: p.size || null }; g.set(p.name, r); } r.qty++; }); return [...g.values()]; };
 export async function saveRemoteCart(cart) {
   if (!acc.user) return; const u = acc.user.id;
   await T('carts').upsert({ user_id: u, updated_at: new Date().toISOString() });
   await T('cart_items').delete().eq('user_id', u);
-  const rows = group(cart).map(r => ({ ...r, user_id: u }));
+  const rows = group(cart).map(r => ({ product_id: r.product_id, name: r.name, price: r.price, qty: r.qty, user_id: u }));
   if (rows.length) await T('cart_items').insert(rows);
 }
 export async function loadRemoteCart() {
   const r = await T('cart_items').select('*').eq('user_id', acc.user.id);
-  return (r.data || []).flatMap(i => Array.from({ length: i.qty }, () => ({ id: i.product_id, name: i.name, price: Number(i.price), gender: '', category: '', images: [] })));
+  return (r.data || []).flatMap(i => Array.from({ length: i.qty }, () => ({ id: i.product_id, name: i.name, price: Number(i.price), gender: '', category: '', images: [], lotId: String(i.product_id).split('#')[0], size: (i.name.match(/ · Talla (.+)$/) || [])[1] || null })));
 }
 export async function createOrder(cart, total) {
   if (!acc.user || !cart.length) return;
-  const { data, error } = await T('orders').insert({ user_id: acc.user.id, total, status: 'Pendiente' }).select().single();
+  const { data, error } = await T('orders').insert({ user_id: acc.user.id, total, order_status: 'Recibido', payment_status: 'Pendiente', payment_method: 'whatsapp' }).select().single();
   if (error) return;
-  const items = group(cart).map(r => ({ ...r, order_id: data.id }));
+  const items = group(cart).map(r => ({ order_id: data.id, product_id: r.product_id, name: r.name, price: r.price, qty: r.qty, lot_id: r.lot, size: r.size }));
   await T('order_items').insert(items);
   acc.orders = [{ ...data, order_items: items }, ...acc.orders];
 }
@@ -83,8 +83,8 @@ function inHTML() {
   const p = acc.profile, a = acc.addr, name = [p.first_name, p.last_name].filter(Boolean).join(' ') || acc.user.email;
   const showForms = !isComplete() || acc.edit;
   const favs = C.products.filter(x => acc.favs.has(x.id));
-  const act = o => { const b = []; if (['Pendiente', 'Confirmado'].includes(o.status)) b.push(['cancel', 'Cancelar pedido']); if (['Confirmado', 'En preparación', 'Enviado'].includes(o.status)) b.push(['recv', 'Ya lo recibí']); return `<button class="order-x" data-acc="ord" data-do="hide" data-id="${esc(o.id)}" aria-label="Quitar pedido" title="Quitar de mi lista">✕</button><div class="acc-actions">${b.map(([k, t]) => `<button class="secondary" data-acc="ord" data-do="${k}" data-id="${esc(o.id)}">${t}</button>`).join('')}</div>`; };
-  const orders = acc.orders.map(o => `<article class="acc-order"><div><b>Pedido #${o.number ?? ''}</b><span>${new Date(o.created_at).toLocaleDateString('es-CO')}</span><em class="st st-${esc(o.status).replace(/\s/g, '')}">${esc(o.status)}</em></div><ul>${(o.order_items || []).map(i => `<li>${i.qty} × ${esc(i.name)} — ${C.money(i.price)}</li>`).join('')}</ul><strong>Total ${C.money(o.total)}</strong>${act(o)}</article>`).join('');
+  const act = o => { const b = []; if ((o.order_status === 'Recibido' && o.payment_status !== 'Aprobado')) b.push(['cancel', 'Cancelar pedido']); if (['En preparación', 'Enviado'].includes(o.order_status)) b.push(['recv', 'Ya lo recibí']); return `<button class="order-x" data-acc="ord" data-do="hide" data-id="${esc(o.id)}" aria-label="Quitar pedido" title="Quitar de mi lista">✕</button><div class="acc-actions">${b.map(([k, t]) => `<button class="secondary" data-acc="ord" data-do="${k}" data-id="${esc(o.id)}">${t}</button>`).join('')}</div>`; };
+  const orders = acc.orders.map(o => `<article class="acc-order"><div><b>Pedido #${o.number ?? ''}</b><span>${new Date(o.created_at).toLocaleDateString('es-CO')}</span><em class="st st-${esc(o.order_status).replace(/\s/g, '')}">${esc(o.order_status)}</em><em class="st pay-${esc(o.payment_status)}">Pago: ${esc(o.payment_status)}</em></div><ul>${(o.order_items || []).map(i => `<li>${i.qty} × ${esc(i.name)} — ${C.money(i.price)}</li>`).join('')}</ul><strong>Total ${C.money(o.total)}</strong>${act(o)}</article>`).join('');
   return `<div class="head"><div><p class="eyebrow">MI CUENTA 👤</p><h2>¡Hola${p.first_name ? ', ' + esc(p.first_name) : ''}! 💚</h2><p>Eres importante para nosotros. Aquí te atendemos con cariño: ¡descubre moda bonita, nueva y a tu medida!</p></div><div class="acc-head-actions"><button class="back" data-a="home">← Inicio</button>${isComplete() ? (acc.edit ? '<button class="back" data-acc="canceledit">Cancelar edición</button>' : '<button class="back" data-acc="edit">✏️ Editar mis datos</button>') : ''}<button class="back" data-acc="signout">Cerrar sesión</button></div></div>${msg()}
   ${acc.recovery ? `<section class="acc-card"><h3>Nueva contraseña</h3><form id="acc-newpass" class="acc-form">${field('password', 'Nueva contraseña', '', 'password', true)}<button class="primary" type="submit">Guardar contraseña</button></form></section>` : ''}
   <div class="acc-grid">${showForms ? `<section class="acc-card"><h3>👤 Mis datos</h3><form id="acc-profile" class="acc-form acc-2">${field('first_name', 'Nombre', p.first_name)}${field('last_name', 'Apellido', p.last_name)}${field('phone', 'Teléfono', p.phone, 'tel')}<label>Correo electrónico<input value="${esc(acc.user.email)}" readonly></label><button class="primary full" type="submit">Guardar mis datos</button></form></section>
@@ -113,7 +113,7 @@ export function bindAccount(h) {
       const o = acc.orders.find(x => x.id === b.dataset.id); if (!o) return; const d = b.dataset.do;
       if (d === 'cancel' && !confirm('¿Cancelar este pedido?')) return;
       if (d === 'hide') { hideLocal(o.id); T('orders').update({ hidden_by_user: true }).eq('id', o.id).then(() => {}); acc.orders = acc.orders.filter(x => x !== o); return done('Pedido quitado de tu lista.'); }
-      const patch = d === 'cancel' ? { status: 'Cancelado' } : { status: 'Entregado' };
+      const patch = d === 'cancel' ? { order_status: 'Cancelado' } : { order_status: 'Entregado' };
       const r = await T('orders').update(patch).eq('id', o.id).select();
       if (r.error || !r.data?.length) return done('', 'No se pudo actualizar el pedido. Avisa al administrador.');
       Object.assign(o, patch);
@@ -140,4 +140,15 @@ export function bindAccount(h) {
     if (id === 'acc-profile') { r = await T('profiles').upsert({ id: u, email: acc.user.email, ...v, updated_at: new Date().toISOString() }); if (!r.error) acc.profile = { ...acc.profile, ...v }; if (!r.error && isComplete()) acc.edit = false; return done(r.error ? '' : 'Datos guardados.', r.error?.message || ''); }
     if (id === 'acc-addr') { r = await T('addresses').upsert({ user_id: u, ...v, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (!r.error) acc.addr = { ...acc.addr, ...v }; if (!r.error && isComplete()) acc.edit = false; return done(r.error ? '' : 'Datos de envío guardados.', r.error?.message || ''); }
   });
+}
+
+export async function refreshOrders() { if (acc.user) await loadAll(); }
+export async function payOnline(cart) {
+  if (!configured || !acc.user) return { login: true };
+  const { data } = await supabase.auth.getSession();
+  try {
+    const r = await fetch('/api/crear-pago', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + data.session.access_token }, body: JSON.stringify({ items: group(cart).map(i => ({ id: i.product_id, lot: i.lot, size: i.size, qty: i.qty })) }) });
+    const j = await r.json().catch(() => ({}));
+    return r.ok ? j : { error: j.error || 'No se pudo iniciar el pago.' };
+  } catch { return { error: 'No se pudo conectar. Intenta de nuevo.' }; }
 }

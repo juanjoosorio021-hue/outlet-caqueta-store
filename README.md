@@ -34,3 +34,7 @@ Siguiente paso para producción: Supabase (base de datos + Storage) y autenticac
 2. En Vercel → Settings → Environment Variables agrega **`VITE_SUPABASE_URL`** y **`VITE_SUPABASE_ANON_KEY`** (Supabase → Project Settings → API). Vuelve a desplegar.
 3. En Supabase → Authentication → URL Configuration, pon la URL de tu tienda en *Site URL* y `https://TU-DOMINIO/?page=account` en *Redirect URLs* (necesario para recuperar contraseña).
 Sin esas variables la pantalla Mi cuenta se ve igual y muestra un aviso. La cuenta de cliente es independiente de `/admin`.
+
+## V11 — Pagos con Wompi (Widget)
+Archivos: `api/wompi/checkout.js`, `api/wompi/events.js`, `api/wompi/status.js`, `api/catalogo/publicar.js`, `api/_lib.js`, `pagos.sql`.
+Webhook: `https://TU-DOMINIO/api/wompi/events`. Variables: ver `.env.example`. Ejecutar `pagos.sql` en Supabase y pulsar "Publicar para pagos" en /admin cada vez que cambien precios o inventario.
