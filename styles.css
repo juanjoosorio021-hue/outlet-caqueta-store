@@ -197,3 +197,11 @@ footer .footer-contact a,footer .social a{color:#fff}
 .card .desc{margin:6px 0 2px;font-size:12.5px;line-height:1.4;color:#52625a;white-space:pre-line}
 .card .desc.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card .desc-more{padding:0;margin-bottom:6px;font-size:12px;font-weight:800;color:var(--green)}
+
+.orders-card .ord{border-top:1px solid var(--line);padding:14px 0;font-size:13px}
+.orders-card .ord-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.orders-card .ord p{margin:6px 0;color:#52625a}.orders-card .ord-ship{line-height:1.5}
+.orders-card .ord select{margin-left:6px;padding:6px 8px;border-radius:8px;border:1px solid var(--line)}
+.orders-card .ord-pay{font-style:normal;font-weight:800;font-size:11px;padding:4px 9px;border-radius:999px}
+.orders-card .pay-Aprobado{background:#e3f6ea;color:#16703f}.orders-card .pay-Rechazado{background:#fff0f0;color:#a83232}.orders-card .pay-Pendiente{background:#fff6dd;color:#6b5210}
+.orders-card .secondary{margin:8px 0}
