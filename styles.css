@@ -193,3 +193,7 @@ footer .footer-contact a,footer .social a{color:#fff}
 .cart-page .pay:disabled{opacity:.6}.cart-page .pay+.wa{margin-top:10px}
 
 .acc-order .pay-Aprobado{background:#e3f6ea;color:#16703f}.acc-order .pay-Rechazado{background:#fff0f0;color:#a83232}.acc-order .pay-Pendiente{background:#fff6dd;color:#6b5210}
+
+.card .desc{margin:6px 0 2px;font-size:12.5px;line-height:1.4;color:#52625a;white-space:pre-line}
+.card .desc.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .desc-more{padding:0;margin-bottom:6px;font-size:12px;font-weight:800;color:var(--green)}

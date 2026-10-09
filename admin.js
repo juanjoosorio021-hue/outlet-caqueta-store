@@ -4,8 +4,8 @@ const META='outlet-caqueta-products';
 const AUTH='outlet-caqueta-admin-auth';
 
 export const ADMIN_CATS={
-  Damas:['Camisas','Camisetas','Jeans','Bermudas','Vestidos','Conjuntos','Lencería','Ropa interior','Accesorios','Zapatos'],
-  Hombres:['Camisas','Camisetas','Jeans','Bermudas','Zapatos','Accesorios','Ropa interior']
+  Damas:['Camisas','Camisetas','Jeans','Jeans cortos','Vestidos','Conjuntos','Lencería','Pijamas','Ropa interior','Accesorios','Zapatos'],
+  Hombres:['Camisas','Camisetas','Jeans','Bermudas','Pijamas','Zapatos','Accesorios','Ropa interior']
 };
 
 const demo=[
@@ -17,7 +17,8 @@ function openDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(D
 export async function saveImage(id,blob){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(blob,id);tx.oncomplete=()=>res(id);tx.onerror=()=>rej(tx.error);});}
 export async function getImage(id){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});}
 export async function deleteImage(id){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
-export function loadProducts(){try{const raw=localStorage.getItem(META);return raw?JSON.parse(raw):demo.map(x=>({...x}));}catch{return demo.map(x=>({...x}));}}
+const fixCat=l=>l.map(p=>p.gender==='Damas'&&p.category==='Bermudas'?{...p,category:'Jeans cortos'}:p);
+export function loadProducts(){try{const raw=localStorage.getItem(META);return fixCat(raw?JSON.parse(raw):demo.map(x=>({...x})));}catch{return fixCat(demo.map(x=>({...x})));}}
 export function saveProducts(products){localStorage.setItem(META,JSON.stringify(products));}
 export function resetProducts(){localStorage.removeItem(META);}
 export function isAdmin(){return sessionStorage.getItem(AUTH)==='1';}

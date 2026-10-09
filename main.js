@@ -5,8 +5,8 @@ import {acc, initAccount, bindAccount, accountHTML, toggleFav, saveRemoteCart, l
 
 const WA = '573154795260';
 const cats = {
-  Damas: ['Todos','Camisas','Camisetas','Jeans','Bermudas','Vestidos','Conjuntos','Lencería','Ropa interior','Accesorios','Zapatos'],
-  Hombres: ['Todos','Camisas','Camisetas','Jeans','Bermudas','Zapatos','Accesorios','Ropa interior']
+  Damas: ['Todos','Camisas','Camisetas','Jeans','Jeans cortos','Vestidos','Conjuntos','Lencería','Pijamas','Ropa interior','Accesorios','Zapatos'],
+  Hombres: ['Todos','Camisas','Camisetas','Jeans','Bermudas','Pijamas','Zapatos','Accesorios','Ropa interior']
 };
 let products = loadProducts();
 const num=v=>Number(String(v).replace(/[^\d]/g,''));
@@ -14,13 +14,14 @@ const num=v=>Number(String(v).replace(/[^\d]/g,''));
 const shop=()=>products.flatMap(l=>{const n=l.images?.length||0;if(n<2)return [{...l,lotId:l.id}];return l.images.map((im,i)=>({...l,id:`${l.id}#${i}`,lotId:l.id,images:[im],name:`${l.name} · Modelo ${i+1}`}));});
 function parseSizes(v){const sizes=[],stock={};String(v||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(t=>{const [n,q]=t.split(':').map(x=>x.trim());if(!n)return;sizes.push(n);stock[n]=(q===undefined||q==='')?null:Math.max(0,num(q));});return {sizes,stock};}
 function loadWidget(){return new Promise((ok,no)=>{if(window.WidgetCheckout)return ok();const s=document.createElement('script');s.src='https://checkout.wompi.co/widget.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
+function descHTML(p){const d=String(p.description||'').trim();if(!d)return '';const long=d.length>70,open=state.open[p.id];return `<p class="desc ${long&&!open?'clamp':''}">${esc(d)}</p>${long?`<button class="desc-more" data-a="desc" data-id="${esc(p.id)}">${open?'Ver menos':'Ver más'}</button>`:''}`;}
 function sizesHTML(p){if(!p.sizes?.length)return '';return `<div class="sizes">${p.sizes.map(z=>{const out=p.stock&&p.stock[z]===0;return `<button class="size ${state.sel[p.id]===z?'on':''}" data-a="size" data-id="${esc(p.id)}" data-s="${esc(z)}" ${out?'disabled':''}>${esc(z)}${out?'<i>Agotada</i>':''}</button>`;}).join('')}</div>${state.warn===p.id?'<p class="size-warn">Elige una talla</p>':''}`;}
 
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CART_KEY='outlet-caqueta-cart';
 function loadCart(){try{const c=JSON.parse(localStorage.getItem(CART_KEY)||'[]');return Array.isArray(c)?c.filter(p=>p&&p.name&&Number.isFinite(Number(p.price))):[];}catch{return [];}}
 function saveCart(){try{localStorage.setItem(CART_KEY,JSON.stringify(state.cart));}catch{}}
-const state = {page:'home',gender:null,category:'Todos',cart:loadCart(),query:'',sel:{},warn:null};
+const state = {page:'home',gender:null,category:'Todos',cart:loadCart(),query:'',sel:{},warn:null,open:{}};
 const imgCache=new Map();
 async function imgSrc(id){if(!id)return null;if(/^(https?:|data:|\/)/.test(id))return id;if(!imgCache.has(id)){const b=await getImage(id).catch(()=>null);imgCache.set(id,b?URL.createObjectURL(b):null);}return imgCache.get(id);}
 function hydrateImages(){document.querySelectorAll('[data-img]').forEach(async el=>{const src=await imgSrc(el.dataset.img);if(src&&el.isConnected&&!el.querySelector('img')){const im=new Image();im.src=src;im.alt='';im.loading='lazy';el.prepend(im);el.classList.add('has-img');}});}
@@ -90,7 +91,7 @@ function home(){
 }
 
 function card(p){
-  return `<article class="card"><div class="photo" data-img="${esc(p.images?.[0]||'')}"><div class="photo-placeholder">${p.gender==='Damas'?'MODA':'ESTILO'}</div><small>${esc(p.category)}</small><button class="fav ${acc.favs.has(p.id)?'on':''}" data-a="fav" data-id="${esc(p.id)}" aria-label="Favorito">${acc.favs.has(p.id)?'♥':'♡'}</button></div><div class="info"><h3>${esc(p.name)}</h3><strong>${money(p.price)}</strong>${sizesHTML(p)}<button data-a="add" data-id="${esc(p.id)}">Agregar al carrito</button></div></article>`;
+  return `<article class="card"><div class="photo" data-img="${esc(p.images?.[0]||'')}"><div class="photo-placeholder">${p.gender==='Damas'?'MODA':'ESTILO'}</div><small>${esc(p.category)}</small><button class="fav ${acc.favs.has(p.id)?'on':''}" data-a="fav" data-id="${esc(p.id)}" aria-label="Favorito">${acc.favs.has(p.id)?'♥':'♡'}</button></div><div class="info"><h3>${esc(p.name)}</h3><strong>${money(p.price)}</strong>${descHTML(p)}${sizesHTML(p)}<button data-a="add" data-id="${esc(p.id)}">Agregar al carrito</button></div></article>`;
 }
 
 function catalog(){
@@ -221,12 +222,13 @@ document.addEventListener('click',e=>{
   if(a==='cart'){state.page='cart';}
   if(a==='account'){state.page='account';}
   if(a==='fav'){if(!acc.user){state.page='account';acc.notice='Inicia sesión o crea tu cuenta para guardar favoritos.';}else toggleFav(x.dataset.id);}
+  if(a==='desc'){state.open[x.dataset.id]=!state.open[x.dataset.id];}
   if(a==='size'){state.sel[x.dataset.id]=x.dataset.s;state.warn=null;}
   if(a==='add'){const p=shop().find(q=>q.id===x.dataset.id);if(p){if(p.sizes?.length&&!state.sel[p.id]){state.warn=p.id;}else{const z=state.sel[p.id];state.cart.push({...p,name:p.name+(z?` · Talla ${z}`:''),size:z||null});state.warn=null;}}}
   if(a==='remove'){const index=Number(x.dataset.index);if(Number.isInteger(index) && index>=0 && index<state.cart.length)state.cart.splice(index,1);state.page='cart';}
   if(a==='wa'){if(!state.cart.length)return;createOrder(state.cart,state.cart.reduce((t,p)=>t+p.price,0));const items=state.cart.map(p=>`• ${p.name} — ${money(p.price)}`).join('\n');const total=state.cart.reduce((t,p)=>t+p.price,0);const msg=`Hola 👋 Soy cliente de OUTLET CAQUETÁ STORE.\n\nQuiero realizar este pedido:\n${items}\n\nTotal: ${money(total)}\n\n¿Me confirmas disponibilidad para continuar?`;window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`,'_blank','noopener');}
   saveCart();syncCart();
-  const quiet=a==='add'||a==='size'||a==='wa'||a==='fav'&&state.page!=='account';
+  const quiet=a==='add'||a==='size'||a==='desc'||a==='wa'||a==='fav'&&state.page!=='account';
   render({scroll:!quiet});
   if(!quiet) syncHistory(false);
 });
